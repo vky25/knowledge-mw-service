@@ -8,8 +8,7 @@ LABEL maintainer="Manojvv <manojv@ilimi.in>"
 FROM circleci/node:8.11.2-stretch AS build
 
 # Update package sources and install required packages
-RUN sed -i '/jessie-updates/d' /etc/apt/sources.list && \
-    echo "deb http://archive.debian.org/debian jessie main" > /etc/apt/sources.list && \
+RUN echo "deb http://archive.debian.org/debian jessie main" > /etc/apt/sources.list && \
     echo "deb http://archive.debian.org/debian-security jessie/updates main" >> /etc/apt/sources.list && \
     echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until && \
     apt-get update && \
