@@ -1,54 +1,22 @@
-# Stage 1: Base image
-FROM node:8.11-slim AS base
+FROM circleci/node:8.11.2-stretch
+MAINTAINER "Manojvv" "manojv@ilimi.in"
+USER root
+COPY src /opt/content/
+WORKDIR /opt/content/
+RUN npm install --unsafe-perm
 
-# Set maintainer label
-LABEL maintainer="Manojvv <manojv@ilimi.in>"
-
-# Stage 2: Build environment
-FROM circleci/node:8.11.2-stretch AS build
-
-# Update package sources and install required packages
-RUN echo "deb http://archive.debian.org/debian jessie main" > /etc/apt/sources.list && \
-    echo "deb http://archive.debian.org/debian-security jessie/updates main" >> /etc/apt/sources.list && \
-    echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends openssl imagemagick && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    useradd -m sunbird
-
-# Switch to non-root user
+FROM node:8.11-slim
+MAINTAINER "Manojvv" "manojv@ilimi.in"
+RUN sed -i '/jessie-updates/d' /etc/apt/sources.list \
+    && apt update && apt install openssl imagemagick -y \
+    && apt-get clean \
+    && useradd -m sunbird
 USER sunbird
-
-# Set working directory
-WORKDIR /home/sunbird/app
-
-# Copy application code (adjust the source path as necessary)
-COPY . .
-
-# Install application dependencies (adjust as necessary for your application)
-RUN npm install
-
-# Expose application port (adjust as necessary for your application)
-EXPOSE 3000
-
-# Command to run the application (adjust as necessary for your application)
-CMD ["npm", "start"]
-
-# Stage 3: Final image
-FROM base AS final
-
-# Copy files from build stage to final stage
-COPY --from=build /home/sunbird/app /home/sunbird/app
-
-# Set working directory in final image
-WORKDIR /home/sunbird/app
-
-# Reinstall dependencies to ensure they are production dependencies only
-RUN npm install --production
-
-# Expose application port
-EXPOSE 3000
-
-# Command to run the application
-CMD ["npm", "start"]
+ADD ImageMagick-i386-pc-solaris2.11.tar.gz /home/sunbird
+ENV GRAPH_HOME "/home/sunbird/ImageMagick-6.9.3"
+ENV PATH "$GRAPH_HOME/bin:$PATH"
+ENV MAGICK_HOME "/home/sunbird/ImageMagick-6.9.3"
+ENV PATH "$MAGICK_HOME/bin:$PATH"
+COPY --from=0 --chown=sunbird /opt/content /home/sunbird/mw/content
+WORKDIR /home/sunbird/mw/content/
+CMD ["node", "app.js", "&"]
